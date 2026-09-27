@@ -1,20 +1,26 @@
 # Save and state foundation
 
-This folder contains the Phase 0 offline persistence foundation.
+Offline persistence for one save slot. Schema version 2.
 
-## Included pieces
-- `LocalSaveService`: schema-versioned JSON persistence with temporary writes, atomic replacement, and backup recovery.
-- `RuntimePlayerState`: captures and restores player vitals, inventory identifiers, and a tracked Transform; saves on application pause and quit.
-- `SaveGameData`: schema version 1 payload containing player name, health, hunger, thirst, position, and inventory identifiers.
+## Pieces
+- `SaveGameData` (schema v2): `Meta` (save tick, UTC time, game version), `Player` (name, vitals, position, inventory), `World` (seed as `ulong`, last chunk). These are the player / world / metadata data boundaries.
+- `SaveMigrations`: frozen DTOs for old schemas and the upgrade path. v1 (flat player payload) migrates automatically.
+- `LocalSaveService`: versioned JSON persistence with durable writes, backup rotation, fallback, and quarantine.
+- `SaveDefaults`: the only definition of a new game's starting state.
+- `SavePaths`: the only place paths are decided. Saves live in `persistentDataPath/saves/player-save.json`, telemetry in `persistentDataPath/telemetry/`. Tests redirect the root with `SavePaths.RootOverride`.
+- `RuntimePlayerState`: binds the save to the player Transform; saves on pause and quit. `Configure(path)` before it wakes points it elsewhere.
 
 ## File behavior
-The default runtime file is `player-save.json` under `Application.persistentDataPath`; the filename can be overridden on `RuntimePlayerState`.
+- Writes go to `.tmp`, are flushed to disk (`Flush(true)`), then `File.Replace` swaps them in and keeps the previous primary as `.bak`.
+- Load reads the primary. If it is missing, corrupt, has no version (`{}`), or has an unknown version, the backup is used and copied back to the primary. An unreadable primary is moved to `<file>.quarantine-<utc>` first.
+- Older schemas are migrated and rewritten; the original file becomes the `.bak`.
+- `Load` throws `SaveNotFoundException`, `SaveVersionException` or `SaveCorruptException` and never moves files it cannot read.
+- `LoadOrCreate` (used at boot) creates a new game when nothing is usable, quarantining every unreadable file first. **No code path deletes or overwrites a save without keeping a copy.**
+- A leftover `.tmp` from an interrupted write is deleted on load; the primary and backup are authoritative.
+- `Save` never mutates the caller's object and returns the copy that was written.
 
-Each write serializes to a `.tmp` file. The first save moves that file into place. Later saves use `File.Replace` to atomically replace the primary file while keeping the prior primary as `.bak`. Loading prefers the primary file and falls back to the backup when the primary payload is malformed; a recovered backup is copied back to the primary path.
+## Tests
+`Assets/Tests/EditMode/LocalSaveServiceTests.cs` covers round trip, no mutation, backup rotation, corrupt/missing/newer primary fallback, version-error and corrupt errors, v1 migration (including seed bit pattern), quarantine, stale `.tmp` cleanup and deep clone. `StartupBootstrapTests` and the PlayMode suite cover boot and runtime use.
 
-`LocalSaveService.Load` rejects schema versions other than the current version. The runtime adapter currently responds to an unsupported version by creating and saving a default player state; schema migration is not implemented.
-
-## Verification and limits
-The Unity Edit Mode suite passes 9 tests, including save round-trip, corrupt-primary backup recovery, and schema mismatch handling. `RuntimePlayerStatePlayModeTests.SaveAndReloadRestoresTransformAcrossRepeatedCycles` passes in Play Mode and verifies two position-and-health save/reload cycles using a temporary, unique save filename.
-
-The current payload is player-only; world, chunk, and structure state are not persisted. Backup recovery is tested with a corrupted primary file, but interruption at each filesystem-write boundary has not been fault-injected. The development test scene remains unchanged; the Play Mode test creates and removes its own temporary object.
+## Not yet covered
+Fault injection at each filesystem step (power loss mid-replace), multiple save slots, and world/structure payloads beyond seed and chunk.

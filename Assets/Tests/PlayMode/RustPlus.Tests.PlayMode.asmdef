@@ -1,10 +1,17 @@
 {
   "name": "RustPlus.Tests.PlayMode",
+  "rootNamespace": "RustPlus.Tests.PlayMode",
   "references": [
-    "RustPlus.Core"
+    "RustPlus.Core",
+    "RustPlus.UI",
+    "UnityEngine.TestRunner"
   ],
-  "optionalUnityReferences": [
-    "TestAssemblies"
+  "overrideReferences": true,
+  "precompiledReferences": [
+    "nunit.framework.dll"
   ],
-  "autoReferenced": false
+  "autoReferenced": false,
+  "defineConstraints": [
+    "UNITY_INCLUDE_TESTS"
+  ]
 }

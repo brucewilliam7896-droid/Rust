@@ -2,6 +2,8 @@
   "name": "RustPlus.Editor",
   "rootNamespace": "RustPlus.EditorTools",
   "references": [
+    "RustPlus.Core",
+    "RustPlus.UI",
     "UnityEditor.TestRunner",
     "UnityEngine.TestRunner"
   ],

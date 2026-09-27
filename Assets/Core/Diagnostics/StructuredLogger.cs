@@ -1,4 +1,5 @@
 using System;
+using RustPlus.Core.Simulation;
 using UnityEngine;
 
 namespace RustPlus.Core.Diagnostics
@@ -16,15 +17,27 @@ namespace RustPlus.Core.Diagnostics
         public string Category { get; }
         public string Message { get; }
         public string Context { get; }
+        public DateTime TimestampUtc { get; }
+
+        /// <summary>Simulation tick when the entry was written, or -1 when no clock is running.</summary>
+        public long Tick { get; }
 
         public StructuredLogEntry(LogSeverity severity, string category, string message, string context)
+            : this(severity, category, message, context, DateTime.UtcNow, -1)
+        {
+        }
+
+        public StructuredLogEntry(LogSeverity severity, string category, string message, string context, DateTime timestampUtc, long tick)
         {
             Severity = severity;
             Category = category;
             Message = message;
             Context = context;
+            TimestampUtc = timestampUtc;
+            Tick = tick;
         }
 
+        /// <summary>Console format. The Unity Console adds its own timestamp, so this one omits it.</summary>
         public override string ToString()
         {
             string contextSuffix = string.IsNullOrWhiteSpace(Context) ? string.Empty : $" | Context={Context}";
@@ -32,14 +45,21 @@ namespace RustPlus.Core.Diagnostics
         }
     }
 
+    /// <summary>
+    /// Categorized, severity-tagged logging. Entries go to the instance sink first, then to
+    /// <see cref="LogReceived"/> subscribers (debug overlay, telemetry). A throwing subscriber is
+    /// isolated and cannot suppress the sink or other subscribers. Safe to call from any thread;
+    /// subscribers run on the calling thread.
+    /// </summary>
     public sealed class StructuredLogger
     {
         private readonly Action<StructuredLogEntry> _sink;
 
-        /// <summary>
-        /// Static event raised on every log call. Consumers can subscribe to receive all structured log entries.
-        /// </summary>
-        public static event Action<LogSeverity, string, string, string> LogReceived;
+        /// <summary>Raised after the sink for every entry at or above <see cref="MinimumSeverity"/>.</summary>
+        public static event Action<StructuredLogEntry> LogReceived;
+
+        /// <summary>Entries below this severity are dropped globally.</summary>
+        public static LogSeverity MinimumSeverity { get; set; } = LogSeverity.Info;
 
         public StructuredLogger() : this(WriteToUnityConsole)
         {
@@ -62,10 +82,32 @@ namespace RustPlus.Core.Diagnostics
                 throw new ArgumentNullException(nameof(message));
             }
 
-            // Raise static event for consumers
-            LogReceived?.Invoke(severity, category, message, context);
+            if (severity < MinimumSeverity)
+            {
+                return;
+            }
 
-            _sink(new StructuredLogEntry(severity, category, message, context));
+            var entry = new StructuredLogEntry(severity, category, message, context, DateTime.UtcNow, SimulationClock.CurrentTick);
+
+            _sink(entry);
+
+            Action<StructuredLogEntry> subscribers = LogReceived;
+            if (subscribers == null)
+            {
+                return;
+            }
+
+            foreach (Delegate subscriber in subscribers.GetInvocationList())
+            {
+                try
+                {
+                    ((Action<StructuredLogEntry>)subscriber)(entry);
+                }
+                catch (Exception ex)
+                {
+                    Debug.LogWarning($"[WARNING][Diagnostics] Log subscriber {subscriber.Method.DeclaringType?.Name}.{subscriber.Method.Name} threw {ex.GetType().Name}: {ex.Message}");
+                }
+            }
         }
 
         private static void WriteToUnityConsole(StructuredLogEntry entry)

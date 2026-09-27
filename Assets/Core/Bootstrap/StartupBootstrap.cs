@@ -1,21 +1,22 @@
 using System;
 using System.IO;
 using RustPlus.Core.Save;
-using UnityEngine;
 
 namespace RustPlus.Core.Bootstrap
 {
+    /// <summary>
+    /// Plain C# boot step: makes sure a usable save exists before any gameplay object loads it.
+    /// Unreadable saves are quarantined, never overwritten (see <see cref="LocalSaveService.LoadOrCreate"/>).
+    /// </summary>
     public sealed class StartupBootstrap
     {
-        private readonly string _rootPath;
-        private readonly string _saveFileName;
         private readonly LocalSaveService _saveService;
 
-        public StartupBootstrap(string rootPath, string saveFileName = "player-save.json")
+        public StartupBootstrap(string saveDirectory, string saveFileName = SavePaths.DefaultSaveFileName)
         {
-            if (string.IsNullOrWhiteSpace(rootPath))
+            if (string.IsNullOrWhiteSpace(saveDirectory))
             {
-                throw new ArgumentException("A valid root path is required for startup bootstrap.", nameof(rootPath));
+                throw new ArgumentException("A valid save directory is required for startup bootstrap.", nameof(saveDirectory));
             }
 
             if (string.IsNullOrWhiteSpace(saveFileName))
@@ -23,66 +24,25 @@ namespace RustPlus.Core.Bootstrap
                 throw new ArgumentException("A save file name is required for startup bootstrap.", nameof(saveFileName));
             }
 
-            _rootPath = rootPath;
-            _saveFileName = saveFileName;
-            Directory.CreateDirectory(_rootPath);
-
-            string savePath = Path.Combine(_rootPath, _saveFileName);
-            _saveService = new LocalSaveService(savePath);
+            Directory.CreateDirectory(saveDirectory);
+            SavePath = Path.Combine(saveDirectory, saveFileName);
+            _saveService = new LocalSaveService(SavePath);
         }
+
+        public string SavePath { get; }
+
+        /// <summary>How the most recent <see cref="EnsureSaveState"/> call obtained its data.</summary>
+        public SaveLoadResult LastResult { get; private set; }
 
         public SaveGameData EnsureSaveState()
         {
-            try
-            {
-                return _saveService.Load();
-            }
-            catch (FileNotFoundException)
-            {
-                SaveGameData defaultState = CreateDefaultState();
-                _saveService.Save(defaultState);
-                return defaultState;
-            }
-            catch (InvalidOperationException)
-            {
-                SaveGameData defaultState = CreateDefaultState();
-                _saveService.Save(defaultState);
-                return defaultState;
-            }
+            LastResult = _saveService.LoadOrCreate(CreateDefaultState);
+            return LastResult.Data;
         }
 
         public SaveGameData CreateDefaultState()
         {
-            return new SaveGameData
-            {
-                SchemaVersion = SaveGameData.CurrentSchemaVersion,
-                PlayerName = "Survivor",
-                Health = 100,
-                Hunger = 100,
-                Thirst = 100,
-                PositionX = 0f,
-                PositionY = 0.5f,
-                PositionZ = 0f,
-                ChunkX = 0,
-                ChunkZ = 0,
-                WorldSeed = 0,
-                SaveTick = 0,
-                Inventory = new[] { "Stone", "Wood" }
-            };
-        }
-    }
-
-    public sealed class GameBootstrapper : MonoBehaviour
-    {
-        [SerializeField] private string saveFileName = "player-save.json";
-
-        private StartupBootstrap _startupBootstrap;
-
-        private void Awake()
-        {
-            string rootPath = Path.Combine(Application.persistentDataPath, "bootstrap");
-            _startupBootstrap = new StartupBootstrap(rootPath, saveFileName);
-            _startupBootstrap.EnsureSaveState();
+            return SaveDefaults.CreateNewGame();
         }
     }
 }
