@@ -1,17 +1,40 @@
 using System;
-using System.IO;
+using RustPlus.Core.Simulation;
 using UnityEngine;
 
 namespace RustPlus.Core.Save
 {
+    /// <summary>
+    /// Binds the save file to the player object: restores the tracked Transform on load and
+    /// captures it on save. Saves on application pause and quit.
+    /// Uses <see cref="SavePaths.DefaultSavePath"/> unless <see cref="Configure"/> is called before it wakes.
+    /// </summary>
     public sealed class RuntimePlayerState : MonoBehaviour
     {
-        [SerializeField] private string saveFileName = "player-save.json";
         [SerializeField] private Transform trackedTransform;
 
         private LocalSaveService _saveService;
+        private string _savePathOverride;
 
-        public SaveGameData Current { get; private set; } = new SaveGameData();
+        public SaveGameData Current { get; private set; } = SaveDefaults.CreateNewGame();
+
+        public SaveLoadOutcome LastLoadOutcome { get; private set; }
+
+        public string SavePath => _saveService?.SavePath ?? _savePathOverride ?? SavePaths.DefaultSavePath;
+
+        /// <summary>
+        /// Points this component at a specific save file. Call before the component wakes
+        /// (for example on an inactive GameObject), such as in tests.
+        /// </summary>
+        public void Configure(string savePath)
+        {
+            if (_saveService != null)
+            {
+                throw new InvalidOperationException("RuntimePlayerState is already initialized; call Configure before Awake.");
+            }
+
+            _savePathOverride = savePath;
+        }
 
         private void Awake()
         {
@@ -20,24 +43,11 @@ namespace RustPlus.Core.Save
                 trackedTransform = transform;
             }
 
-            string path = Path.Combine(Application.persistentDataPath, saveFileName);
-            _saveService = new LocalSaveService(path);
+            _saveService = new LocalSaveService(_savePathOverride ?? SavePaths.DefaultSavePath);
 
-            try
-            {
-                Current = _saveService.Load();
-                ApplyState(Current);
-            }
-            catch (FileNotFoundException)
-            {
-                Current = CreateDefaultState();
-                Save();
-            }
-            catch (InvalidOperationException)
-            {
-                Current = CreateDefaultState();
-                Save();
-            }
+            SaveLoadResult result = _saveService.LoadOrCreate(() => SaveDefaults.CreateNewGame());
+            LastLoadOutcome = result.Outcome;
+            ApplyState(result.Data);
         }
 
         private void OnApplicationPause(bool pause)
@@ -55,38 +65,41 @@ namespace RustPlus.Core.Save
 
         public void Save()
         {
-            Current = CaptureState();
-            _saveService.Save(Current);
+            if (_saveService == null)
+            {
+                return;
+            }
+
+            Current = _saveService.Save(CaptureState());
         }
 
         public SaveGameData Load()
         {
-            Current = _saveService.Load();
-            ApplyState(Current);
+            SaveGameData loaded = _saveService.Load();
+            ApplyState(loaded);
             return Current;
         }
 
         public SaveGameData CaptureState()
         {
+            SaveGameData snapshot = Current.Clone();
             Transform target = trackedTransform != null ? trackedTransform : transform;
             Vector3 position = target.position;
 
-            return new SaveGameData
+            snapshot.Player.PositionX = position.x;
+            snapshot.Player.PositionY = position.y;
+            snapshot.Player.PositionZ = position.z;
+            if (string.IsNullOrWhiteSpace(snapshot.Player.Name))
             {
-                SchemaVersion = SaveGameData.CurrentSchemaVersion,
-                PlayerName = string.IsNullOrWhiteSpace(Current.PlayerName) ? "Survivor" : Current.PlayerName,
-                Health = Current.Health,
-                Hunger = Current.Hunger,
-                Thirst = Current.Thirst,
-                PositionX = position.x,
-                PositionY = position.y,
-                PositionZ = position.z,
-                ChunkX = Current.ChunkX,
-                ChunkZ = Current.ChunkZ,
-                WorldSeed = Current.WorldSeed,
-                SaveTick = Current.SaveTick,
-                Inventory = Current.Inventory ?? Array.Empty<string>()
-            };
+                snapshot.Player.Name = SaveDefaults.DefaultPlayerName;
+            }
+
+            if (SimulationClock.CurrentTick >= 0)
+            {
+                snapshot.Meta.SaveTick = SimulationClock.CurrentTick;
+            }
+
+            return snapshot;
         }
 
         public void ApplyState(SaveGameData state)
@@ -100,24 +113,8 @@ namespace RustPlus.Core.Save
 
             if (trackedTransform != null)
             {
-                trackedTransform.position = new Vector3(state.PositionX, state.PositionY, state.PositionZ);
+                trackedTransform.position = new Vector3(state.Player.PositionX, state.Player.PositionY, state.Player.PositionZ);
             }
-        }
-
-        private static SaveGameData CreateDefaultState()
-        {
-            return new SaveGameData
-            {
-                SchemaVersion = SaveGameData.CurrentSchemaVersion,
-                PlayerName = "Survivor",
-                Health = 100,
-                Hunger = 100,
-                Thirst = 100,
-                PositionX = 0f,
-                PositionY = 0.5f,
-                PositionZ = 0f,
-                Inventory = new[] { "Stone", "Wood" }
-            };
         }
     }
 }

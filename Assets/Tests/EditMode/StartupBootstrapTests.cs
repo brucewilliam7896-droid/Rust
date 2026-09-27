@@ -9,67 +9,75 @@ namespace RustPlus.Tests.EditMode
 {
     public sealed class StartupBootstrapTests
     {
+        private string _root;
+
+        [SetUp]
+        public void SetUp()
+        {
+            _root = Path.Combine(Path.GetTempPath(), $"rustplus-bootstrap-{Guid.NewGuid():N}");
+        }
+
+        [TearDown]
+        public void TearDown()
+        {
+            if (Directory.Exists(_root))
+            {
+                Directory.Delete(_root, true);
+            }
+        }
+
         [Test]
         public void BootstrapCreatesDefaultSaveWhenMissing()
         {
-            string tempRoot = Path.Combine(Path.GetTempPath(), $"rustplus-bootstrap-{Guid.NewGuid():N}");
-            Directory.CreateDirectory(tempRoot);
+            var bootstrap = new StartupBootstrap(_root, "bootstrap-save.json");
+            SaveGameData state = bootstrap.EnsureSaveState();
 
-            try
-            {
-                var bootstrap = new StartupBootstrap(tempRoot, "bootstrap-save.json");
-                SaveGameData state = bootstrap.EnsureSaveState();
-
-                Assert.That(state.PlayerName, Is.EqualTo("Survivor"));
-                Assert.That(state.Health, Is.EqualTo(100));
-                Assert.That(File.Exists(Path.Combine(tempRoot, "bootstrap-save.json")), Is.True);
-            }
-            finally
-            {
-                if (Directory.Exists(tempRoot))
-                {
-                    Directory.Delete(tempRoot, true);
-                }
-            }
+            Assert.That(state.Player.Name, Is.EqualTo(SaveDefaults.DefaultPlayerName));
+            Assert.That(state.Player.Health, Is.EqualTo(SaveDefaults.MaxVital));
+            Assert.That(bootstrap.LastResult.Outcome, Is.EqualTo(SaveLoadOutcome.CreatedNew));
+            Assert.That(File.Exists(Path.Combine(_root, "bootstrap-save.json")), Is.True);
         }
 
         [Test]
         public void BootstrapKeepsExistingValidSave()
         {
-            string tempRoot = Path.Combine(Path.GetTempPath(), $"rustplus-bootstrap-{Guid.NewGuid():N}");
-            Directory.CreateDirectory(tempRoot);
+            Directory.CreateDirectory(_root);
+            SaveGameData expected = SaveDefaults.CreateNewGame();
+            expected.Player.Name = "Alice";
+            expected.Player.Health = 75;
+            File.WriteAllText(Path.Combine(_root, "bootstrap-save.json"), JsonUtility.ToJson(expected));
 
-            try
-            {
-                string savePath = Path.Combine(tempRoot, "bootstrap-save.json");
-                SaveGameData expected = new SaveGameData
-                {
-                    SchemaVersion = SaveGameData.CurrentSchemaVersion,
-                    PlayerName = "Alice",
-                    Health = 75,
-                    Hunger = 60,
-                    Thirst = 82,
-                    PositionX = 12.5f,
-                    PositionY = 6f,
-                    PositionZ = -3.25f,
-                    Inventory = new[] { "Stone", "Wood" }
-                };
+            var bootstrap = new StartupBootstrap(_root, "bootstrap-save.json");
+            SaveGameData loaded = bootstrap.EnsureSaveState();
 
-                File.WriteAllText(savePath, JsonUtility.ToJson(expected));
+            Assert.That(loaded.Player.Name, Is.EqualTo("Alice"));
+            Assert.That(loaded.Player.Health, Is.EqualTo(75));
+            Assert.That(bootstrap.LastResult.Outcome, Is.EqualTo(SaveLoadOutcome.Loaded));
+        }
 
-                var bootstrap = new StartupBootstrap(tempRoot, "bootstrap-save.json");
-                SaveGameData loaded = bootstrap.EnsureSaveState();
+        [Test]
+        public void BootstrapNeverOverwritesAnUnreadableSave()
+        {
+            Directory.CreateDirectory(_root);
+            string savePath = Path.Combine(_root, "bootstrap-save.json");
+            const string futureSave = "{\"SchemaVersion\":999,\"PlayerName\":\"FromTheFuture\"}";
+            File.WriteAllText(savePath, futureSave);
 
-                Assert.That(loaded.PlayerName, Is.EqualTo("Alice"));
-                Assert.That(loaded.Health, Is.EqualTo(75));
-            }
-            finally
-            {
-                if (Directory.Exists(tempRoot))
-                {
-                    Directory.Delete(tempRoot, true);
-                }
-            }
+            var bootstrap = new StartupBootstrap(_root, "bootstrap-save.json");
+            SaveGameData state = bootstrap.EnsureSaveState();
+
+            Assert.That(state.Player.Name, Is.EqualTo(SaveDefaults.DefaultPlayerName));
+            Assert.That(bootstrap.LastResult.Outcome, Is.EqualTo(SaveLoadOutcome.ReplacedUnreadable));
+            Assert.That(File.ReadAllText(bootstrap.LastResult.QuarantinedFiles[0]), Is.EqualTo(futureSave));
+        }
+
+        [Test]
+        public void DefaultStateMatchesTheSharedDefinition()
+        {
+            var bootstrap = new StartupBootstrap(_root);
+
+            Assert.That(JsonUtility.ToJson(bootstrap.CreateDefaultState()), Is.EqualTo(JsonUtility.ToJson(SaveDefaults.CreateNewGame())));
+            Assert.That(bootstrap.SavePath, Is.EqualTo(Path.Combine(_root, SavePaths.DefaultSaveFileName)));
         }
     }
 }

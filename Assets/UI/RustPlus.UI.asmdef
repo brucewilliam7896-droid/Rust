@@ -1,0 +1,9 @@
+{
+  "name": "RustPlus.UI",
+  "rootNamespace": "RustPlus.UI",
+  "references": [
+    "RustPlus.Core",
+    "Unity.InputSystem"
+  ],
+  "autoReferenced": true
+}
