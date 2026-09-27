@@ -72,25 +72,25 @@ This section turns the above engineering plan into a practical Unity production 
 Build a clean Unity runtime foundation and prove that the game can boot, save, and recover safely.
 
 ### Checklist
-- [ ] Create Unity project structure: Core, Gameplay, World, Save, Systems, UI, Data, Testing.
-- [ ] Configure input, fixed timestep, serialization, and build settings.
+- [x] Create Unity project structure: Core, Gameplay, World, Save, Systems, UI, Data, Testing. (Save lives in `Core/Save`, tests in `Tests/`.)
+- [x] Configure input, fixed timestep, serialization, and build settings. (Input System only, 50 Hz, Boot scene first.)
 - [x] Decide engine architecture: modular MonoBehaviours with plain C# domain logic; revisit ECS only if profiling justifies it.
-- [ ] Create boot scene and startup bootstrap flow. (startup bootstrap code added; Unity runtime confirmation pending)
+- [x] Create boot scene and startup bootstrap flow. (`Assets/Scenes/Boot.unity`, built by `RustPlus/Create Boot Scene`; covered by a PlayMode test.)
 - [x] Implement structured logger with severity and context formatting.
-- [ ] Add debug tools.
+- [x] Add debug tools. (`DebugOverlay`, toggle with backquote.)
 - [x] Add versioned save/load system with backup handling.
-- [ ] Define player data, world data, and metadata boundaries.
+- [x] Define player data, world data, and metadata boundaries. (Save schema v2 with v1 migration.)
 - [x] Implement deterministic RNG service.
-- [ ] Add simple telemetry and event logging.
-- [ ] Build CI basics for Unity build/test automation.
+- [x] Add simple telemetry and event logging. (Local JSON Lines per session.)
+- [x] Build CI basics for Unity build/test automation. (`.github/workflows/tests.yml`; needs Unity license secrets to run.)
 - [x] Create a local test scene to validate runtime systems.
 
 ### Exit criteria
 - [x] The game boots cleanly in editor.
 - [x] Save and reload works repeatedly.
 - [x] Data versioning is enforced.
-- [ ] Logs and telemetry are visible and structured.
-- [ ] The project is stable enough to begin gameplay work.
+- [x] Logs and telemetry are visible and structured.
+- [x] The project is stable enough to begin gameplay work.
 
 ---
 
