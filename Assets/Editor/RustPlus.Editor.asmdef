@@ -1,0 +1,12 @@
+{
+  "name": "RustPlus.Editor",
+  "rootNamespace": "RustPlus.EditorTools",
+  "references": [
+    "UnityEditor.TestRunner",
+    "UnityEngine.TestRunner"
+  ],
+  "includePlatforms": [
+    "Editor"
+  ],
+  "autoReferenced": false
+}

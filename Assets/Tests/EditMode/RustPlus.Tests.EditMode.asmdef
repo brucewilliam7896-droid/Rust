@@ -1,0 +1,13 @@
+{
+  "name": "RustPlus.Tests.EditMode",
+  "references": [
+    "RustPlus.Core"
+  ],
+  "includePlatforms": [
+    "Editor"
+  ],
+  "optionalUnityReferences": [
+    "TestAssemblies"
+  ],
+  "autoReferenced": false
+}

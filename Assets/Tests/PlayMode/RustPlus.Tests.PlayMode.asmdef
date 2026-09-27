@@ -1,0 +1,10 @@
+{
+  "name": "RustPlus.Tests.PlayMode",
+  "references": [
+    "RustPlus.Core"
+  ],
+  "optionalUnityReferences": [
+    "TestAssemblies"
+  ],
+  "autoReferenced": false
+}
