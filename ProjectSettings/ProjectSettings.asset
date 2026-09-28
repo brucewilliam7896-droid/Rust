@@ -4,7 +4,6 @@
 PlayerSettings:
   m_ObjectHideFlags: 0
   serializedVersion: 30
-  fixedTimestep: 0.02
   productGUID: 47783a734a3e6a04c81d7d9399a8f6d5
   AndroidProfiler: 0
   AndroidFilterTouchesWhenObscured: 0
@@ -934,7 +933,7 @@ PlayerSettings:
   qnxGraphicConfPath: 
   apiCompatibilityLevel: 6
   captureStartupLogs: {}
-  activeInputHandler: 1
+  activeInputHandler: 0
   windowsGamepadBackendHint: 0
   enableDirectStorage: 0
   cloudProjectId: 02ed65fb-bdca-4d59-9e6d-7de8f046b88f

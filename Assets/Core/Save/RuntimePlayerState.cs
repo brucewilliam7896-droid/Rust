@@ -74,18 +74,24 @@ namespace RustPlus.Core.Save
             return new SaveGameData
             {
                 SchemaVersion = SaveGameData.CurrentSchemaVersion,
-                PlayerName = string.IsNullOrWhiteSpace(Current.PlayerName) ? "Survivor" : Current.PlayerName,
-                Health = Current.Health,
-                Hunger = Current.Hunger,
-                Thirst = Current.Thirst,
-                PositionX = position.x,
-                PositionY = position.y,
-                PositionZ = position.z,
-                ChunkX = Current.ChunkX,
-                ChunkZ = Current.ChunkZ,
-                WorldSeed = Current.WorldSeed,
-                SaveTick = Current.SaveTick,
-                Inventory = Current.Inventory ?? Array.Empty<string>()
+                Player = new PlayerData
+                {
+                    PlayerName = string.IsNullOrWhiteSpace(Current.Player.PlayerName) ? "Survivor" : Current.Player.PlayerName,
+                    Health = Current.Player.Health,
+                    Hunger = Current.Player.Hunger,
+                    Thirst = Current.Player.Thirst,
+                    PositionX = position.x,
+                    PositionY = position.y,
+                    PositionZ = position.z,
+                    Inventory = Current.Player.Inventory ?? Array.Empty<string>()
+                },
+                World = new WorldMetadata
+                {
+                    ChunkX = Current.World.ChunkX,
+                    ChunkZ = Current.World.ChunkZ,
+                    WorldSeed = Current.World.WorldSeed,
+                    SaveTick = Current.World.SaveTick
+                }
             };
         }
 
@@ -100,7 +106,7 @@ namespace RustPlus.Core.Save
 
             if (trackedTransform != null)
             {
-                trackedTransform.position = new Vector3(state.PositionX, state.PositionY, state.PositionZ);
+                trackedTransform.position = new Vector3(state.Player.PositionX, state.Player.PositionY, state.Player.PositionZ);
             }
         }
 
@@ -109,14 +115,18 @@ namespace RustPlus.Core.Save
             return new SaveGameData
             {
                 SchemaVersion = SaveGameData.CurrentSchemaVersion,
-                PlayerName = "Survivor",
-                Health = 100,
-                Hunger = 100,
-                Thirst = 100,
-                PositionX = 0f,
-                PositionY = 0.5f,
-                PositionZ = 0f,
-                Inventory = new[] { "Stone", "Wood" }
+                Player = new PlayerData
+                {
+                    PlayerName = "Survivor",
+                    Health = 100,
+                    Hunger = 100,
+                    Thirst = 100,
+                    PositionX = 0f,
+                    PositionY = 0.5f,
+                    PositionZ = 0f,
+                    Inventory = new[] { "Stone", "Wood" }
+                },
+                World = new WorldMetadata()
             };
         }
     }

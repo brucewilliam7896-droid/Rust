@@ -56,18 +56,24 @@ namespace RustPlus.Core.Bootstrap
             return new SaveGameData
             {
                 SchemaVersion = SaveGameData.CurrentSchemaVersion,
-                PlayerName = "Survivor",
-                Health = 100,
-                Hunger = 100,
-                Thirst = 100,
-                PositionX = 0f,
-                PositionY = 0.5f,
-                PositionZ = 0f,
-                ChunkX = 0,
-                ChunkZ = 0,
-                WorldSeed = 0,
-                SaveTick = 0,
-                Inventory = new[] { "Stone", "Wood" }
+                Player = new PlayerData
+                {
+                    PlayerName = "Survivor",
+                    Health = 100,
+                    Hunger = 100,
+                    Thirst = 100,
+                    PositionX = 0f,
+                    PositionY = 0.5f,
+                    PositionZ = 0f,
+                    Inventory = new[] { "Stone", "Wood" }
+                },
+                World = new WorldMetadata
+                {
+                    ChunkX = 0,
+                    ChunkZ = 0,
+                    WorldSeed = 0,
+                    SaveTick = 0
+                }
             };
         }
     }

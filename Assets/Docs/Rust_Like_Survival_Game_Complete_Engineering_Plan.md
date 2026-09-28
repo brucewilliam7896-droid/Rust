@@ -72,25 +72,25 @@ This section turns the above engineering plan into a practical Unity production 
 Build a clean Unity runtime foundation and prove that the game can boot, save, and recover safely.
 
 ### Checklist
-- [ ] Create Unity project structure: Core, Gameplay, World, Save, Systems, UI, Data, Testing.
-- [ ] Configure input, fixed timestep, serialization, and build settings.
+- [x] Create Unity project structure: Core, Gameplay, World, Save, Systems, UI, Data, Testing.
+- [x] Configure input, fixed timestep, serialization, and build settings. (fixed timestep at 0.02s/50Hz; debug input bindings removed)
 - [x] Decide engine architecture: modular MonoBehaviours with plain C# domain logic; revisit ECS only if profiling justifies it.
-- [ ] Create boot scene and startup bootstrap flow. (startup bootstrap code added; Unity runtime confirmation pending)
+- [ ] Create boot scene and startup bootstrap flow. (Boot.unity scene exists but `GameBootstrapper` is not yet attached to a GameObject in it; startup bootstrap code and tests are in place)
 - [x] Implement structured logger with severity and context formatting.
-- [ ] Add debug tools.
+- [x] Add debug tools. (`DebugConsole` added for real-time structured log monitoring)
 - [x] Add versioned save/load system with backup handling.
-- [ ] Define player data, world data, and metadata boundaries.
+- [x] Define player data, world data, and metadata boundaries. (`SaveGameData` split into nested `PlayerData`/`WorldMetadata`, schema bumped to v2)
 - [x] Implement deterministic RNG service.
-- [ ] Add simple telemetry and event logging.
-- [ ] Build CI basics for Unity build/test automation.
+- [x] Add simple telemetry and event logging. (telemetry logging integrated into `LocalSaveService` via `StructuredLogger`)
+- [ ] Build CI basics for Unity build/test automation. (`.github/workflows/tests.yml` added using game-ci/unity-test-runner; unverified end-to-end, no UNITY_LICENSE secret configured yet; local batch-mode run via `CITestRunner` has not returned a usable result)
 - [x] Create a local test scene to validate runtime systems.
 
 ### Exit criteria
 - [x] The game boots cleanly in editor.
 - [x] Save and reload works repeatedly.
 - [x] Data versioning is enforced.
-- [ ] Logs and telemetry are visible and structured.
-- [ ] The project is stable enough to begin gameplay work.
+- [x] Logs and telemetry are visible and structured.
+- [ ] The project is stable enough to begin gameplay work. (blocked on boot scene wiring confirmation and a verified CI run)
 
 ---
 

@@ -5,7 +5,7 @@ This folder contains the Phase 0 offline persistence foundation.
 ## Included pieces
 - `LocalSaveService`: schema-versioned JSON persistence with temporary writes, atomic replacement, and backup recovery.
 - `RuntimePlayerState`: captures and restores player vitals, inventory identifiers, and a tracked Transform; saves on application pause and quit.
-- `SaveGameData`: schema version 1 payload containing player name, health, hunger, thirst, position, and inventory identifiers.
+- `SaveGameData`: schema version 2 envelope holding a `PlayerData` block (name, vitals, position, inventory) and a `WorldMetadata` block (chunk coordinates, world seed, save tick). Player and world concerns are kept in separate nested types so future world/chunk persistence can grow independently of player state.
 
 ## File behavior
 The default runtime file is `player-save.json` under `Application.persistentDataPath`; the filename can be overridden on `RuntimePlayerState`.

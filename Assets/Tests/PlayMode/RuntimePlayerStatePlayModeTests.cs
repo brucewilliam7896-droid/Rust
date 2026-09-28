@@ -33,23 +33,23 @@ namespace RustPlus.Tests.PlayMode
 
                 Vector3 firstPosition = new Vector3(4.25f, 1.5f, -8f);
                 trackedObject.transform.position = firstPosition;
-                state.Current.Health = 73;
+                state.Current.Player.Health = 73;
                 state.Save();
 
                 trackedObject.transform.position = Vector3.zero;
                 SaveGameData firstLoad = state.Load();
                 Assert.That(Vector3.Distance(trackedObject.transform.position, firstPosition), Is.LessThan(0.0001f));
-                Assert.That(firstLoad.Health, Is.EqualTo(73));
+                Assert.That(firstLoad.Player.Health, Is.EqualTo(73));
 
                 Vector3 secondPosition = new Vector3(-12f, 3.75f, 21.5f);
                 trackedObject.transform.position = secondPosition;
-                state.Current.Health = 58;
+                state.Current.Player.Health = 58;
                 state.Save();
 
                 trackedObject.transform.position = Vector3.one;
                 SaveGameData secondLoad = state.Load();
                 Assert.That(Vector3.Distance(trackedObject.transform.position, secondPosition), Is.LessThan(0.0001f));
-                Assert.That(secondLoad.Health, Is.EqualTo(58));
+                Assert.That(secondLoad.Player.Health, Is.EqualTo(58));
             }
             finally
             {

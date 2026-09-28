@@ -19,23 +19,27 @@ namespace RustPlus.Tests.EditMode
                 var original = new SaveGameData
                 {
                     SchemaVersion = SaveGameData.CurrentSchemaVersion,
-                    PlayerName = "TestRunner",
-                    Health = 92,
-                    Hunger = 64,
-                    Thirst = 61,
-                    PositionX = 12.5f,
-                    PositionY = 18.0f,
-                    PositionZ = -4.25f,
-                    Inventory = new[] { "Stone", "Wood", "Fiber" }
+                    Player = new PlayerData
+                    {
+                        PlayerName = "TestRunner",
+                        Health = 92,
+                        Hunger = 64,
+                        Thirst = 61,
+                        PositionX = 12.5f,
+                        PositionY = 18.0f,
+                        PositionZ = -4.25f,
+                        Inventory = new[] { "Stone", "Wood", "Fiber" }
+                    },
+                    World = new WorldMetadata()
                 };
 
                 service.Save(original);
                 SaveGameData loaded = service.Load();
 
-                Assert.That(loaded.PlayerName, Is.EqualTo(original.PlayerName));
-                Assert.That(loaded.Health, Is.EqualTo(original.Health));
-                Assert.That(loaded.PositionX, Is.EqualTo(original.PositionX));
-                Assert.That(loaded.Inventory, Is.EqualTo(original.Inventory));
+                Assert.That(loaded.Player.PlayerName, Is.EqualTo(original.Player.PlayerName));
+                Assert.That(loaded.Player.Health, Is.EqualTo(original.Player.Health));
+                Assert.That(loaded.Player.PositionX, Is.EqualTo(original.Player.PositionX));
+                Assert.That(loaded.Player.Inventory, Is.EqualTo(original.Player.Inventory));
             }
             finally
             {
@@ -63,14 +67,18 @@ namespace RustPlus.Tests.EditMode
                 var expected = new SaveGameData
                 {
                     SchemaVersion = SaveGameData.CurrentSchemaVersion,
-                    PlayerName = "Recovered",
-                    Health = 77,
-                    Hunger = 50,
-                    Thirst = 40,
-                    PositionX = 1f,
-                    PositionY = 2f,
-                    PositionZ = 3f,
-                    Inventory = new[] { "Metal", "Scrap" }
+                    Player = new PlayerData
+                    {
+                        PlayerName = "Recovered",
+                        Health = 77,
+                        Hunger = 50,
+                        Thirst = 40,
+                        PositionX = 1f,
+                        PositionY = 2f,
+                        PositionZ = 3f,
+                        Inventory = new[] { "Metal", "Scrap" }
+                    },
+                    World = new WorldMetadata()
                 };
 
                 File.WriteAllText(backupPath, JsonUtility.ToJson(expected));
@@ -78,8 +86,8 @@ namespace RustPlus.Tests.EditMode
                 var service = new LocalSaveService(path);
                 SaveGameData loaded = service.Load();
 
-                Assert.That(loaded.PlayerName, Is.EqualTo("Recovered"));
-                Assert.That(loaded.Health, Is.EqualTo(77));
+                Assert.That(loaded.Player.PlayerName, Is.EqualTo("Recovered"));
+                Assert.That(loaded.Player.Health, Is.EqualTo(77));
             }
             finally
             {

@@ -20,8 +20,8 @@ namespace RustPlus.Tests.EditMode
                 var bootstrap = new StartupBootstrap(tempRoot, "bootstrap-save.json");
                 SaveGameData state = bootstrap.EnsureSaveState();
 
-                Assert.That(state.PlayerName, Is.EqualTo("Survivor"));
-                Assert.That(state.Health, Is.EqualTo(100));
+                Assert.That(state.Player.PlayerName, Is.EqualTo("Survivor"));
+                Assert.That(state.Player.Health, Is.EqualTo(100));
                 Assert.That(File.Exists(Path.Combine(tempRoot, "bootstrap-save.json")), Is.True);
             }
             finally
@@ -45,14 +45,18 @@ namespace RustPlus.Tests.EditMode
                 SaveGameData expected = new SaveGameData
                 {
                     SchemaVersion = SaveGameData.CurrentSchemaVersion,
-                    PlayerName = "Alice",
-                    Health = 75,
-                    Hunger = 60,
-                    Thirst = 82,
-                    PositionX = 12.5f,
-                    PositionY = 6f,
-                    PositionZ = -3.25f,
-                    Inventory = new[] { "Stone", "Wood" }
+                    Player = new PlayerData
+                    {
+                        PlayerName = "Alice",
+                        Health = 75,
+                        Hunger = 60,
+                        Thirst = 82,
+                        PositionX = 12.5f,
+                        PositionY = 6f,
+                        PositionZ = -3.25f,
+                        Inventory = new[] { "Stone", "Wood" }
+                    },
+                    World = new WorldMetadata()
                 };
 
                 File.WriteAllText(savePath, JsonUtility.ToJson(expected));
@@ -60,8 +64,8 @@ namespace RustPlus.Tests.EditMode
                 var bootstrap = new StartupBootstrap(tempRoot, "bootstrap-save.json");
                 SaveGameData loaded = bootstrap.EnsureSaveState();
 
-                Assert.That(loaded.PlayerName, Is.EqualTo("Alice"));
-                Assert.That(loaded.Health, Is.EqualTo(75));
+                Assert.That(loaded.Player.PlayerName, Is.EqualTo("Alice"));
+                Assert.That(loaded.Player.Health, Is.EqualTo(75));
             }
             finally
             {

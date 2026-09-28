@@ -1,5 +1,28 @@
 # Progress Log
 
+## 2026-09-28
+
+### Status
+- Fixed unresolved git-conflict markers left in `Packages/manifest.json` (kept the "Updated upstream" side) and removed the corrupted `Packages/packages-lock.json` so Unity can resolve packages again.
+- Added the MCP for Unity package dependency to `Packages/manifest.json`; `UnityMCP` now shows connected in `claude mcp list`.
+- Save schema reworked into explicit player/world boundaries; Phase 0 checklist and exit criteria in the engineering plan updated to match actual repo state.
+
+### Completed
+- Created the remaining Phase 0 top-level folders: `Assets/Gameplay`, `Assets/World`, `Assets/Systems`, `Assets/UI`, `Assets/Data`.
+- Split `SaveGameData` into `PlayerData` and `WorldMetadata` nested types under `Assets/Core/Save/LocalSaveService.cs`; bumped `CurrentSchemaVersion` to 2. Updated all call sites (`StartupBootstrap`, `RuntimePlayerState`) and tests (`StartupBootstrapTests`, `RuntimePlayerStatePlayModeTests`, `DeterministicRandomTests`) to the nested shape.
+- Updated `Assets/Core/Save/Readme.md` to describe the v2 schema and the player/world domain split.
+
+### Current focus
+- Boot scene wiring: `Boot.unity` exists but `GameBootstrapper` (in `Assets/Core/Bootstrap/StartupBootstrap.cs`) is not attached to any GameObject in it yet — needs to be done in the Unity Editor (or via Unity MCP once its tools are available in a session).
+- CI basics: `.github/workflows/tests.yml` uses `game-ci/unity-test-runner@v4` but has never actually run (no `UNITY_LICENSE`/`UNITY_SERIAL` secrets configured), and a local batch-mode invocation of `CITestRunner` previously exited without a usable result — root cause not yet confirmed.
+
+### Verification
+- The schema-split refactor has NOT been run through Unity's Test Runner yet in this session (Unity MCP tools were not loaded for this session at the time of the edit, and the Editor already had the project open). All EditMode/PlayMode tests touching `SaveGameData` were updated to match the new shape by inspection, but this needs an actual test run to confirm before being marked verified.
+
+### Notes
+- Multiplayer remains intentionally deferred until the offline-first exit criteria are fulfilled.
+- Persistence now cleanly separates player vitals/position/inventory from world/chunk metadata, which should make future world/chunk save work additive instead of another schema-flattening exercise.
+
 ## 2026-09-27
 
 ### Status

@@ -5,12 +5,13 @@ using RustPlus.Core.Diagnostics;
 
 namespace RustPlus.Core.Save
 {
+    /// <summary>
+    /// Per-player vitals, position, and inventory. Owned by the player domain;
+    /// world/chunk concerns must not be added here.
+    /// </summary>
     [Serializable]
-    public sealed class SaveGameData
+    public sealed class PlayerData
     {
-        public const int CurrentSchemaVersion = 1;
-
-        public int SchemaVersion;
         public string PlayerName;
         public int Health;
         public int Hunger;
@@ -20,34 +21,41 @@ namespace RustPlus.Core.Save
         public float PositionZ;
         public string[] Inventory;
 
-        /// <summary>
-        /// World chunk coordinates this player was last in.
-        /// Used for world persistence and chunk reloading.
-        /// </summary>
+        public PlayerData()
+        {
+            PlayerName = string.Empty;
+            Inventory = Array.Empty<string>();
+        }
+    }
+
+    /// <summary>
+    /// World-scoped save metadata: the chunk the player was last in, the world
+    /// generation seed, and the tick the save was taken at. Owned by the world
+    /// domain; player vitals must not be added here.
+    /// </summary>
+    [Serializable]
+    public sealed class WorldMetadata
+    {
         public int ChunkX;
         public int ChunkZ;
-
-        /// <summary>
-        /// World generation seed for this save.
-        /// Required for world regeneration during wipe/season cycles.
-        /// </summary>
         public int WorldSeed;
-
-        /// <summary>
-        /// Current game tick when this save was taken.
-        /// Used for deterministic replay and validation.
-        /// </summary>
         public int SaveTick;
+    }
+
+    [Serializable]
+    public sealed class SaveGameData
+    {
+        public const int CurrentSchemaVersion = 2;
+
+        public int SchemaVersion;
+        public PlayerData Player;
+        public WorldMetadata World;
 
         public SaveGameData()
         {
             SchemaVersion = CurrentSchemaVersion;
-            PlayerName = string.Empty;
-            Inventory = Array.Empty<string>();
-            ChunkX = 0;
-            ChunkZ = 0;
-            WorldSeed = 0;
-            SaveTick = 0;
+            Player = new PlayerData();
+            World = new WorldMetadata();
         }
     }
 
